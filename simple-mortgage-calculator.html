@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mortgage Calculator</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --text:#1c2230; --muted:#667085; --accent:#2f6fed; --border:#dde1e8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151c; --card:#1b2030; --text:#e8ebf2; --muted:#98a2b3; --accent:#6c9bff; --border:#2c3347; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--text); font:16px/1.4 system-ui,sans-serif; }
+  main { max-width:560px; margin:0 auto; }
+  h1 { font-size:1.5rem; margin:0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin:12px 0 4px; }
+  label:first-child { margin-top:0; }
+  input { width:100%; padding:10px 12px; font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:8px; }
+  input:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .result { text-align:center; }
+  .big { font-size:2.4rem; font-weight:700; color:var(--accent); }
+  .sub { color:var(--muted); font-size:.85rem; }
+  dl { display:grid; grid-template-columns:1fr auto; gap:6px 12px; margin:16px 0 0; }
+  dt { color:var(--muted); } dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; }
+  .err { color:#d92d20; font-size:.85rem; min-height:1.2em; margin-top:8px; }
+  details summary { cursor:pointer; color:var(--accent); }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; font-variant-numeric:tabular-nums; margin-top:10px; }
+  th, td { text-align:right; padding:4px 6px; border-bottom:1px solid var(--border); }
+  th:first-child, td:first-child { text-align:left; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mortgage Calculator</h1>
+  <div class="card">
+    <label for="price">Home price (€)</label>
+    <input id="price" type="number" min="0" step="1000" value="300000">
+    <div class="row">
+      <div><label for="down">Down payment (€)</label><input id="down" type="number" min="0" step="1000" value="60000"></div>
+      <div><label for="term">Term (years)</label><input id="term" type="number" min="1" max="50" step="1" value="30"></div>
+    </div>
+    <label for="rate">Annual interest rate (%)</label>
+    <input id="rate" type="number" min="0" max="100" step="0.01" value="4.5">
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="card result">
+    <div class="sub">Monthly payment</div>
+    <div class="big" id="monthly">–</div>
+    <dl>
+      <dt>Loan amount</dt><dd id="loan">–</dd>
+      <dt>Total interest</dt><dd id="interest">–</dd>
+      <dt>Total paid</dt><dd id="total">–</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Yearly amortization</summary>
+      <table>
+        <thead><tr><th>Year</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+        <tbody id="schedule"></tbody>
+      </table>
+    </details>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const eur = n => n.toLocaleString('en-IE', { style:'currency', currency:'EUR', maximumFractionDigits:2 });
+
+function payment(loan, annualPct, years) {
+  const n = years * 12, r = annualPct / 100 / 12;
+  return r === 0 ? loan / n : loan * r / (1 - Math.pow(1 + r, -n));
+}
+
+function update() {
+  const price = parseFloat($('price').value), down = parseFloat($('down').value) || 0;
+  const rate = parseFloat($('rate').value), years = parseInt($('term').value, 10);
+  let msg = '';
+  if (!(price > 0)) msg = 'Enter a home price above 0.';
+  else if (down < 0 || down >= price) msg = 'Down payment must be between 0 and the home price.';
+  else if (!(rate >= 0 && rate <= 100)) msg = 'Rate must be between 0 and 100%.';
+  else if (!(years >= 1 && years <= 50)) msg = 'Term must be 1–50 years.';
+  $('err').textContent = msg;
+  const tbody = $('schedule');
+  if (msg) {
+    ['monthly','loan','interest','total'].forEach(k => $(k).textContent = '–');
+    tbody.innerHTML = '';
+    return;
+  }
+  const loan = price - down, n = years * 12, r = rate / 100 / 12;
+  const pmt = payment(loan, rate, years);
+  $('monthly').textContent = eur(pmt);
+  $('loan').textContent = eur(loan);
+  $('interest').textContent = eur(pmt * n - loan);
+  $('total').textContent = eur(pmt * n);
+
+  let bal = loan, rows = '';
+  for (let y = 1; y <= years; y++) {
+    let princ = 0, int = 0;
+    for (let m = 0; m < 12; m++) {
+      const i = bal * r, p = Math.min(pmt - i, bal);
+      int += i; princ += p; bal -= p;
+    }
+    rows += `<tr><td>${y}</td><td>${eur(princ)}</td><td>${eur(int)}</td><td>${eur(Math.max(bal, 0))}</td></tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+document.querySelectorAll('input').forEach(el => el.addEventListener('input', update));
+update();
+</script>
+</body>
+</html>
