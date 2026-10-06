@@ -94,3 +94,20 @@ Result: 14 findings (4 High, 1 High ambiguity, 4 Medium, 5 Low); all 12 referenc
 > write this in 04-review.md, commit push and add prompts to the prompts.md
 
 Result: `docs/v1/04-review.md` written, prompts logged, committed and pushed.
+
+## 14. Build plan (layer 5)
+
+> read first four files from docs/v1/ from my github repo mortgage-calculator and write 05-plan.md in requested structure(sections):
+> section1 objectives of v1 (2-4objectives); section2 scope - reference to 01-functional.md; section3 acceptance Criteria (Functional: list the tests from 03-test-scenarios.md that must pass, no criterion without a corresponding test; Technical: the test command passes without errors, the application starts with a single command, the README explains how to run it); section4 Build Order (modules ordered by dependencies; for each step the module, the tests that must pass, one commit); section5 Definition of Done for each step (module tests green, previous tests green, commit, handoff); section6 Build Tools (skills, hooks, subagents from Hour 3 and why); section7 Risks and Open Questions
+
+Result: `docs/v1/05-plan.md` written (4 objectives, 161 tests assigned to 9 steps, 7 risks + 6 open questions).
+
+## 15. Plan control
+
+> control this plan with this options: 1. each acceptance criterion is a specific test or command with an unambiguous result 2. the build order respects the dependencies from 02-architecture.md
+
+Result: technical criteria replaced by TECH-01..05 (fixed commands and expected results); UIF-09/10/11/13/16 moved from step 5 to step 7 (they need the full flow); dependency table added.
+
+## 16. Commit and push
+
+> commit push and add prompts to prompts.md
