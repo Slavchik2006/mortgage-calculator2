@@ -45,3 +45,20 @@ Result: spec and scaffold committed, pushed to `origin/master`.
 ## 5. Log prompts
 
 > i want to fill the prompts.md with the prompts from this session, but only important prompts for example you can unite commit and push as one prompt
+
+## 6. Architecture draft
+
+> i want to do a 02-architecture.md file from my github repo mortgage-calculator2, propose a modular architekture(read first 01-functional.md)
+
+Result: `docs/v1/02-architecture.md` (pure core + thin UI; stack assumed browser TS/JS, no dependencies); `docs/handoff.md` updated.
+
+## 7. Module detail
+
+> For each module give responsibility, interface and which requirements it implements
+> each module need to describe in one sentence
+
+Result: per-module subsections (responsibility, interface, requirements by spec section, dependencies), a one-sentence description per module, and a spec-to-module coverage table.
+
+## 8. Commit and log prompts
+
+> ok, commit this and do prompts.md for this session
