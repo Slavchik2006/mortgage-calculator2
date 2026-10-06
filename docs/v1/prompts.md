@@ -79,3 +79,18 @@ Result: `03-test-scenarios.md` rewritten (37 requirement IDs, 161 tests, unique 
 ## 11. Commit and push
 
 > commit and push and add prompts to prompts.md
+
+## 12. Independent review (layer 4)
+
+> You are an independent reviewer. You did not write this plan.
+> Read only: `docs/v1/01-functional.md`, `docs/v1/02-architecture.md`, `docs/v1/03-test-scenarios.md`. Do not trust the claims; verify them.
+> Check: 1. Every requirement has a module and at least one test, and every test covers a real requirement. 2. Ambiguous requirements that could lead to different implementations or results. 3. Missing edge cases and invalid inputs. 4. For 3 out-of-scope features, specify exactly which modules would need changes. 5. Recalculate every reference value in a separate script. Do not estimate.
+> Return numbered findings in a table with severity and what each finding affects. Do not modify any files.
+
+Result: 14 findings (4 High, 1 High ambiguity, 4 Medium, 5 Low); all 12 reference values correct, but tolerances unsatisfiable (CAL-08/09/13/23) and double precision insufficient at the 1e12 cap.
+
+## 13. Write review, commit and push
+
+> write this in 04-review.md, commit push and add prompts to the prompts.md
+
+Result: `docs/v1/04-review.md` written, prompts logged, committed and pushed.
