@@ -61,3 +61,52 @@ Not important so far:
 6. Write each decision into the doc it changes in the same session.
 7. Build a tool from section 6 only if it is actually used (the commit-guard hook is the cheapest).
 8. Record timings and counts while working.
+
+## 7. Comparison with a simple single-file calculator (no spec)
+
+Control experiment: a plain `mortgage-calculator.html` (price, down payment, rate, term; live results; yearly table) was built in one step without reading `01`-`06`, outside the repo. Then `03-test-scenarios.md` was applied to it.
+
+Method and limits: VAL, CAL and FMT scenarios were executed against the script of that HTML (Node, stub DOM that mimics `type=number` sanitising; reference values V1-V12 from `03` §3). UIF, UIR and INT were judged by reading the code (no jsdom). A scenario passes only if everything it asserts is observable and correct; a missing feature counts as not met. Validation was scored leniently (accept/reject plus "message names the right field", symbolic messages not required). These are my judgement numbers, not an automated run.
+
+### 7.1 Result
+
+| Group | Scenarios | Simple calculator | This repo (V1) |
+|---|---|---|---|
+| VAL | 64 | 34 | 64 |
+| CAL | 33 | 6 | 33 |
+| FMT | 18 | 13 | 18 |
+| INT-17 (architecture) | 1 | 0 | 1 |
+| UIF, UIR, INT-01..16 | 45 | 5 | not automated (checked by hand) |
+| **Total** | **161** | **58 (36%)** | **116 runnable pass, 45 missing** |
+
+The repo's 119 passing tests are these 116 runnable scenarios plus 3 TECH tests that `03` does not contain.
+
+### 7.2 What the simple calculator did right and wrong
+
+- Right: formula and all summary figures for V1-V12, also at the 1e12 cap (to the cent); half-up rounding of 1.005 and 2.675 (`Intl`); fixed locale; no network or storage; rejection of text, negatives, hex, `Infinity`, down >= price.
+- Wrong, spec decisions (100 of the 103 misses): no tax/insurance; live recalculation instead of a Calculate button; yearly instead of monthly table; rate max 100 and term max 50 (spec 25 and 40); empty down payment treated as 0; no decimal, cap or integer-term rules; one shared error instead of one per field; results shown on load.
+- Wrong, numerical (3):
+  - CAL-08 (V6, 0.01 %, 40 y): total interest off by 6.6e-7, worse than even the relaxed 1e-8 tolerance. `1-(1+r)^-n` loses precision for small r (edge case 9).
+  - CAL-22: closing balance is not `=== 0` (V5 1.7e-9, V3 1.1e-10, V6 6.6e-7). No final-payment adjustment; `Math.max(bal, 0)` and formatting hide it.
+  - CAL-25: interest column vs total interest differs by 3.3e-9 relative on V6 (limit 1e-9).
+- Formatting: `-€0.00` for -1e-12 and -0 (edge case 6 reproduced); no `RangeError` for NaN, Infinity or 1e15.
+
+### 7.3 Against the retro
+
+| Retro statement | Evidence from the simple calculator |
+|---|---|
+| The precision risk was real; BigInt fixed it (R3, R5) | Partly confirmed. Doubles are fine at 1e12 to the cent (V7, V8 pass), but fail at tiny rates (V6) and for an exactly-zero closing balance. |
+| Tolerances of 1e-12 were impossible, reference has 10 decimals | Confirmed: V4, V10, V12 match M only at 1e-8. V6 misses even that, so the relaxed tolerance still catches a real defect. |
+| Final-payment adjustment does nothing | True for the payment amount, but without it the closing balance is not exactly 0. |
+| Edge case 4: `type=number` hides invalid text | Reproduced: `abc` and `3,5` become empty and give a "required"-style message; `.5` is accepted. |
+| Edge case 6: `-€0.00` | Reproduced in the formatter. Not reached with the loans tried. |
+| Step 0 / docs first | Supported: the misses are spec decisions (tax/insurance, caps, button, monthly table, error model), not arithmetic. |
+| 45 DOM tests missing is the biggest blocker | Same blocker here: UI and integration had to be judged by reading code, so the 36 % has the weakest evidence in those 45 scenarios. |
+
+### 7.4 Conclusions
+
+1. The core maths is cheap. A spec-blind build gets the summary figures right and loses on scope, UX and validation: 100 of 103 misses.
+2. The three numerical defects are exactly what the plan's precision work targeted (tiny rate, exact closing balance). The BigInt and final-payment design is justified, not over-engineering.
+3. The suite separates a correct formula from a conforming implementation (36 % vs 119/119 runnable).
+4. Scenarios tied to module APIs (`validate`, `collect`, `calculate`, per-field `#x-error`) cannot pass in any other implementation. For comparing implementations a DOM-only version of them is needed.
+5. For V2: finish step 0 first, and automate the 45 UI/integration scenarios, otherwise any comparison stays partly manual.
