@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mortgage calculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <h1>Mortgage calculator</h1>
+    <form id="mortgage-form" novalidate>
+      <div class="field">
+        <label for="price">Home price (EUR)</label>
+        <input id="price" name="price" type="text" inputmode="decimal" autocomplete="off">
+        <div id="price-error" class="error" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="downPayment">Down payment (EUR)</label>
+        <input id="downPayment" name="downPayment" type="text" inputmode="decimal" autocomplete="off">
+        <div id="downPayment-error" class="error" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="annualRate">Annual interest rate (%)</label>
+        <input id="annualRate" name="annualRate" type="text" inputmode="decimal" autocomplete="off">
+        <div id="annualRate-error" class="error" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="termYears">Term (years)</label>
+        <input id="termYears" name="termYears" type="text" inputmode="numeric" autocomplete="off">
+        <div id="termYears-error" class="error" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="annualTax">Annual property tax (EUR) <span class="optional">optional</span></label>
+        <input id="annualTax" name="annualTax" type="text" inputmode="decimal" autocomplete="off">
+        <div id="annualTax-error" class="error" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="annualInsurance">Annual home insurance (EUR) <span class="optional">optional</span></label>
+        <input id="annualInsurance" name="annualInsurance" type="text" inputmode="decimal" autocomplete="off">
+        <div id="annualInsurance-error" class="error" role="alert"></div>
+      </div>
+      <button type="submit">Calculate</button>
+    </form>
+    <section id="results" aria-live="polite"></section>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "mortgage-calculator2",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mortgage calculator V1 (fixed-rate annuity, EUR)",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test tests/",
+    "start": "node scripts/serve.mjs"
+  }
+}
