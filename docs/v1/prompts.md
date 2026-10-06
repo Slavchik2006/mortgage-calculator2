@@ -62,3 +62,20 @@ Result: per-module subsections (responsibility, interface, requirements by spec 
 ## 8. Commit and log prompts
 
 > ok, commit this and do prompts.md for this session
+
+## 9. Test scenarios
+
+> read 01-functional.md and 02-architecture.md and give me test scenarios for file 03-test-scenarious.md in table with columns: test, level, module, input, source of expected value and type(happy path, edge case, invalid input) and also list edge cases that i havent mentioned
+
+Result: first draft of `docs/v1/03-test-scenarios.md` (about 130 tests, edge-case list).
+
+## 10. Test scenario quality check
+
+> can you control this options: each requirement from layer 1 appears in the ' Verifies Requirement ' column, each test has an unique name, no expected output is vague, each reference value has a source
+> if something wrong correct it
+
+Result: `03-test-scenarios.md` rewritten (37 requirement IDs, 161 tests, unique names, assumptions A1-A14, no open decisions); `docs/v1/reference_values.py` added as the source of reference values. Corrected: V8 float vs decimal value, V4 precision, final-payment claim.
+
+## 11. Commit and push
+
+> commit and push and add prompts to prompts.md
