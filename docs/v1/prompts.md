@@ -111,3 +111,22 @@ Result: technical criteria replaced by TECH-01..05 (fixed commands and expected 
 ## 16. Commit and push
 
 > commit push and add prompts to prompts.md
+
+## 17. Build from the plan
+
+> build a mortgage calculator with a plan from my github repo mortgage-calculator2 file 05-plan.md
+
+Result: steps 1-8 built on the plan's defaults (plain JS, BigInt cents arithmetic, `node --test`); 119 tests green; 45 DOM tests not written (jsdom needs install approval); step 0 doc amendments and `.claude/` tools not done. `handoff.md` updated.
+
+## 18. Retrospective
+
+> now you need to write 06-retro.md (six questions: what the plan got right/wrong, biggest prompt change, review findings, experiment results, V2 methodology changes)
+> make it more simplier
+
+Result: `docs/v1/06-retro.md`, first detailed, then rewritten in plain language.
+
+## 19. Commit, push, fix prompts
+
+> commit push and correct the prompts.md
+
+Result: implementation and docs committed and pushed; prompts 17-19 added.
