@@ -55,3 +55,11 @@
 - Backend: `core/parameters.py`, `storage/supabase.py` rewritten (embedding reads, RPC writes, `verify_parameters()` at startup), duplicate name -> 409 in memory and Supabase stores. Frontend shows 409 under the name field.
 - Tests: backend pytest 72 pass.
 - To go live: apply migration, create `backend/.env` (`STORAGE=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), start the API (it verifies the catalog), smoke-test.
+
+### Update: migration applied (session of 2026-10-15, later)
+
+- `supabase/migrations/20261015000000_scenarios.sql` is now APPLIED to project `dapqejeusrqpdhxhnbrh`. The user ran it manually in the Supabase SQL editor: the MCP `apply_migration` call was declined twice (permission prompt, not a server error; server read-only mode is untested).
+- Verified via the Supabase MCP (read-only checks): 4 tables in `public` with RLS on (`parameters` has 6 rows, the rest empty); `create_scenario` / `update_scenario` exist with `search_path=""` and execute granted to `service_role` only; trigger `scenarios_set_updated_at` enabled; security advisors show only INFO `rls_enabled_no_policy` x4 (intended: service-role access only).
+- Migration history is out of sync: `supabase_migrations` is empty because the SQL editor does not record it. Before using `supabase db push`, run `supabase migration repair --status applied 20261015000000` (needs the CLI, which is not installed; ask first).
+- Still to do: create `backend/.env` (`STORAGE=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`; the user enters the key), start the API (it verifies the catalog at startup), smoke-test create/update, `name_taken` (409) and the 50-scenario `limit` against the real database.
+- Not committed (needs approval).
