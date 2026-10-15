@@ -9,5 +9,7 @@ def build_store() -> ScenarioStore:
     if os.environ.get("STORAGE", "memory") == "supabase":
         from .storage.supabase import SupabaseScenarioStore
 
-        return SupabaseScenarioStore(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
+        store = SupabaseScenarioStore(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
+        store.verify_parameters()  # refuse to start if the database catalog drifted from the code
+        return store
     return MemoryScenarioStore()

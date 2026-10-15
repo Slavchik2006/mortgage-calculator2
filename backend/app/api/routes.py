@@ -8,12 +8,13 @@ from pydantic import BaseModel, ConfigDict
 from ..core.calculation import calculate
 from ..core.types import LoanInput
 from ..core.validation import validate
-from ..storage.base import ScenarioLimitError, ScenarioStore
+from ..storage.base import ScenarioLimitError, ScenarioNameTaken, ScenarioStore
 from .serialization import result_to_dict
 
 router = APIRouter(prefix="/api/v1")
 
 MAX_FIELD_LEN = 32
+_NAME_TAKEN = {"error": "A scenario with this name already exists."}
 
 
 class RawInput(BaseModel):
@@ -94,13 +95,18 @@ def create_scenario(body: ScenarioBody, sid: Session, store: Store) -> dict:
         return store.create(sid, name, body.inputs.model_dump())
     except ScenarioLimitError:
         raise HTTPException(409, detail={"error": "Scenario limit reached (50)."}) from None
+    except ScenarioNameTaken:
+        raise HTTPException(409, detail=_NAME_TAKEN) from None
 
 
 @router.put("/scenarios/{scenario_id}")
 def update_scenario(scenario_id: uuid.UUID, body: ScenarioBody, sid: Session, store: Store) -> dict:
     name = _clean_name(body.name)
     _validated(body.inputs)
-    row = store.update(sid, str(scenario_id), name, body.inputs.model_dump())
+    try:
+        row = store.update(sid, str(scenario_id), name, body.inputs.model_dump())
+    except ScenarioNameTaken:
+        raise HTTPException(409, detail=_NAME_TAKEN) from None
     if row is None:
         raise HTTPException(404, detail={"error": "Scenario not found."})
     return row

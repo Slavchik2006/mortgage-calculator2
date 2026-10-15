@@ -50,6 +50,8 @@ async function save() {
     await refreshScenarios();
   } else if (res.networkError) {
     scenarios.showNote('Saved scenarios are unavailable right now.');
+  } else if (res.status === 409) {
+    scenarios.setNameError(res.error); // duplicate name or 50-scenario limit
   } else if (res.errors) {
     const { name, ...fieldErrors } = res.errors;
     if (name) scenarios.setNameError(name);

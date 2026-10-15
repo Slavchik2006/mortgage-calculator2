@@ -48,3 +48,10 @@
 - Old V1 `src/`, `index.html`, `tests/`, `scripts/` are still in place (no deletions without approval). Decide: remove V1 JS validation/calculation after cut-over.
 - Supabase deferred by the user: scenarios use the in-memory store until the migration is applied.
 - `.claude/launch.json` added for the dev server (port 8000).
+
+### Update: Supabase data model (same day, uncommitted)
+
+- Migration rewritten as four tables: `parameters` (6 seeded rows), `sessions`, `scenarios` (unique name per session), `scenario_values`, plus atomic `create_scenario` / `update_scenario` functions. NOT applied; SQL not executed anywhere yet (only seed parity is unit-tested).
+- Backend: `core/parameters.py`, `storage/supabase.py` rewritten (embedding reads, RPC writes, `verify_parameters()` at startup), duplicate name -> 409 in memory and Supabase stores. Frontend shows 409 under the name field.
+- Tests: backend pytest 72 pass.
+- To go live: apply migration, create `backend/.env` (`STORAGE=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), start the API (it verifies the catalog), smoke-test.

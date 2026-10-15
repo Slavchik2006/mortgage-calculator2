@@ -108,29 +108,75 @@ def test_bad_scenario_id_is_400(client):
 
 
 # ---- Supabase store against a mocked PostgREST ----
+SCN = "11111111-1111-1111-1111-111111111111"
+
+
+def _row(name="n"):
+    return {"id": SCN, "name": name, "updated_at": "t",
+            "scenario_values": [{"parameter_code": k, "value": v} for k, v in BODY.items()]}
+
+
+class FakePostgrest:
+    """Records requests; replies per path."""
+
+    def __init__(self, rpc_status="ok", rows=None):
+        self.requests, self.rpc_status, self.rows = [], rpc_status, [_row()] if rows is None else rows
+
+    def __call__(self, req: httpx.Request) -> httpx.Response:
+        self.requests.append(req)
+        path = req.url.path
+        if path.endswith("/rpc/create_scenario") or path.endswith("/rpc/update_scenario"):
+            return httpx.Response(200, json={"status": self.rpc_status, "id": SCN})
+        if req.method == "DELETE":
+            return httpx.Response(200, json=[{"id": SCN}] if self.rows else [])
+        return httpx.Response(200, json=self.rows)
+
+
 def _supabase_client(handler):
     store = SupabaseScenarioStore("https://x.supabase.co", "SERVICEKEY", httpx.Client(transport=httpx.MockTransport(handler)))
     return TestClient(create_app(store))
 
 
-def test_supabase_store_scopes_by_session_and_uses_key():
-    seen = []
+def test_supabase_list_maps_values_to_inputs_and_scopes_by_session():
+    fake = FakePostgrest()
+    c, h = _supabase_client(fake), sid()
+    got = c.get("/api/v1/scenarios", headers=h).json()
+    assert got == [{"id": SCN, "name": "n", "inputs": BODY, "updatedAt": "t"}]
+    req = fake.requests[0]
+    assert req.headers["apikey"] == "SERVICEKEY"
+    assert req.url.params["session_id"] == f"eq.{h['X-Session-Id']}"
+    assert "scenario_values(parameter_code,value)" in req.url.params["select"]
 
-    def handler(req: httpx.Request) -> httpx.Response:
-        seen.append(req)
-        if req.method == "GET":
-            return httpx.Response(200, json=[{"id": "i1", "name": "n", "inputs": BODY, "updated_at": "t"}])
-        return httpx.Response(200, json=[{"id": "i1", "name": "n", "inputs": json.loads(req.content)["inputs"], "updated_at": "t"}])
 
-    c = _supabase_client(handler)
-    h = sid()
-    assert c.get("/api/v1/scenarios", headers=h).json()[0]["updatedAt"] == "t"
+def test_supabase_create_uses_atomic_rpc_with_session_and_all_six_values():
+    fake = FakePostgrest()
+    c, h = _supabase_client(fake), sid()
     r = c.post("/api/v1/scenarios", json={"name": "n", "inputs": BODY}, headers=h)
-    assert r.status_code == 201
-    for req in seen:
-        assert req.headers["apikey"] == "SERVICEKEY"
-        assert req.url.params.get("session_id") == f"eq.{h['X-Session-Id']}" or req.method == "POST"
-    assert json.loads(seen[-1].content)["session_id"] == h["X-Session-Id"]
+    assert r.status_code == 201 and r.json()["id"] == SCN
+    rpc = next(q for q in fake.requests if q.url.path.endswith("/rpc/create_scenario"))
+    payload = json.loads(rpc.content)
+    assert payload["p_session"] == h["X-Session-Id"] and payload["p_name"] == "n"
+    assert set(payload["p_values"]) == set(BODY)
+
+
+@pytest.mark.parametrize("status", ["limit", "name_taken"])
+def test_supabase_create_conflicts(status):
+    c = _supabase_client(FakePostgrest(rpc_status=status))
+    assert c.post("/api/v1/scenarios", json={"name": "n", "inputs": BODY}, headers=sid()).status_code == 409
+
+
+def test_supabase_update_statuses():
+    h, url = sid(), f"/api/v1/scenarios/{SCN}"
+    body = {"name": "n", "inputs": BODY}
+    assert _supabase_client(FakePostgrest()).put(url, json=body, headers=h).status_code == 200
+    assert _supabase_client(FakePostgrest(rpc_status="not_found")).put(url, json=body, headers=h).status_code == 404
+    assert _supabase_client(FakePostgrest(rpc_status="name_taken")).put(url, json=body, headers=h).status_code == 409
+
+
+def test_supabase_delete():
+    h, url = sid(), f"/api/v1/scenarios/{SCN}"
+    assert _supabase_client(FakePostgrest()).delete(url, headers=h).status_code == 204
+    assert _supabase_client(FakePostgrest(rows=[])).delete(url, headers=h).status_code == 404
 
 
 def test_supabase_down_gives_503():
@@ -142,11 +188,15 @@ def test_supabase_down_gives_503():
     assert c.post("/api/v1/calculate", json=BODY).status_code == 200  # calculation has no DB dependency
 
 
-def test_supabase_update_delete_missing_row_is_404():
-    c = _supabase_client(lambda req: httpx.Response(200, json=[]))
-    h, i = sid(), str(uuid.uuid4())
-    assert c.put(f"/api/v1/scenarios/{i}", json={"name": "n", "inputs": BODY}, headers=h).status_code == 404
-    assert c.delete(f"/api/v1/scenarios/{i}", headers=h).status_code == 404
+def test_memory_duplicate_name_is_409(client):
+    h = sid()
+    assert client.post("/api/v1/scenarios", json={"name": "A", "inputs": BODY}, headers=h).status_code == 201
+    r = client.post("/api/v1/scenarios", json={"name": "A", "inputs": BODY}, headers=h)
+    assert r.status_code == 409 and "already exists" in r.json()["error"]
+    other = client.post("/api/v1/scenarios", json={"name": "B", "inputs": BODY}, headers=h).json()["id"]
+    assert client.put(f"/api/v1/scenarios/{other}", json={"name": "A", "inputs": BODY}, headers=h).status_code == 409
+    assert client.put(f"/api/v1/scenarios/{other}", json={"name": "B", "inputs": BODY}, headers=h).status_code == 200
+    assert client.post("/api/v1/scenarios", json={"name": "A", "inputs": BODY}, headers=sid()).status_code == 201
 
 
 def test_frontend_served_same_origin(client):
