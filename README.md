@@ -33,3 +33,22 @@ Runs the built-in `node --test` runner over `tests/`. `node scripts/check-covera
 - `CLAUDE.md` - project instructions for Claude Code
 - `docs/handoff.md` - current state and next steps
 - `docs/v1/` - v1 workflow artifacts (01-functional ... 06-retro, prompts)
+
+## V2 (frontend + API + Python backend)
+
+V2 moves validation and calculation to a Python API; the V1 files in `src/` and `index.html` are kept for reference until the cut-over is approved. Design: `docs/v2/02-architecture.md`.
+
+Run (Windows PowerShell; from the repo root):
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
+```
+
+Open `http://127.0.0.1:8000` (the API serves `frontend/`; API docs at `/docs`).
+
+Test: `.\.venv\Scripts\python.exe -m pytest` in `backend/`, and `npm run test:frontend` in the repo root.
+
+Saved scenarios use an anonymous per-browser session id. Storage is in memory by default; set `STORAGE=supabase`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (see `backend/.env.example`) after applying `supabase/migrations/`.

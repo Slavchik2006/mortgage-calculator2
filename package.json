@@ -7,6 +7,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test tests/",
+    "test:frontend": "node --test frontend/tests/",
     "start": "node scripts/serve.mjs"
   }
 }

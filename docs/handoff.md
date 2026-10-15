@@ -32,3 +32,19 @@
 
 - Commits, pushes and installs need explicit approval (project `CLAUDE.md`).
 - Nested folder `mortgage-calculator2/mortgage-calculator2/` is an older separate repo (own `.git`); ignored.
+
+## V2 backend (session of 2026-10-15, uncommitted)
+
+- Design: `docs/v2/01-functional.md` (delta), `docs/v2/02-architecture.md` (frontend / API / Python backend / Supabase, anonymous session id, no accounts).
+- Built `backend/` (FastAPI, venv at `backend/.venv`, pins in `backend/requirements.txt`): `core/` (validation, Decimal calculation), `api/` (`/api/v1/calculate`, `/scenarios` CRUD, `/health`), `storage/` (memory default, Supabase PostgREST). Run from `backend/`: `.venv/Scripts/python -m pytest` (56 pass), `.venv/Scripts/python -m uvicorn app.main:app`.
+- `supabase/migrations/20261015000000_scenarios.sql` written, NOT applied to project `mortgage_calculator` (dapqejeusrqpdhxhnbrh; empty). Needs approval + `backend/.env` with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `STORAGE=supabase`.
+- Next: apply migration and smoke-test; frontend migration (`api.js`, `session.js`, `ui/scenarios.js`, serve `frontend/` from the API); docs/v2 stages 03-06; V1 JS validation/calculation removal after the frontend switch.
+- Not committed (needs approval).
+
+### Update: frontend built (same day)
+
+- `frontend/` (index.html, styles.css, `src/{main,api,session,formatting}.js`, `src/ui/{form,results,scenarios}.js`) calls the API; formatting works on decimal strings. Served by the API at `/` (same origin). Verified in the browser: calculate (360 rows, EUR 1,216.04 monthly P&I), inline 422 error, save scenario.
+- Tests: `backend` pytest 57 pass; `npm run test:frontend` 7 pass. Root V1 tests (`npm test`) untouched.
+- Old V1 `src/`, `index.html`, `tests/`, `scripts/` are still in place (no deletions without approval). Decide: remove V1 JS validation/calculation after cut-over.
+- Supabase deferred by the user: scenarios use the in-memory store until the migration is applied.
+- `.claude/launch.json` added for the dev server (port 8000).
